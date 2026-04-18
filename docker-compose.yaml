@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+
+  # -------------------------
+  # SPARK MASTER
+  # -------------------------
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    networks:
+      - imdb-net
+    volumes:
+      - ./app:/app
+
+  # -------------------------
+  # SPARK WORKER
+  # -------------------------
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    depends_on:
+      - spark-master
+    networks:
+      - imdb-net
+    volumes:
+      - ./app:/app
+
+  # -------------------------
+  # PIPELINE ORCHESTRATOR
+  # -------------------------
+  pipeline-runner:
+    image: python:3.10-slim
+    container_name: pipeline-runner
+    depends_on:
+      - spark-master
+      - spark-worker
+    working_dir: /app
+    volumes: #Ec2 ebs volume
+      - ./app:/app
+      - ./data:/data
+    environment: ./configuration.ini
+      # AWS
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+      # REDSHIFT
+      - REDSHIFT_HOST=${REDSHIFT_HOST}
+      - REDSHIFT_DB=${REDSHIFT_DB}
+      - REDSHIFT_USER=${REDSHIFT_USER}
+      - REDSHIFT_PASSWORD=${REDSHIFT_PASSWORD}
+      - REDSHIFT_PORT=${REDSHIFT_PORT}
+      - IAM_ROLE=${IAM_ROLE}
+
+    command: >
+      bash -c "
+      set -e &&
+      echo '==============================' &&
+      echo 'STEP 1: Kaggle Download' &&
+      python3 download_kaggle_file.py &&
+
+      echo '==============================' &&
+      echo 'STEP 2: Spark ETL Job' &&
+      python3 pyspark_etl_job.py &&
+
+      echo '==============================' &&
+      echo 'STEP 3: Load to Redshift' &&
+      python3 load_to_olap.py &&
+
+      echo '==============================' &&
+      echo 'PIPELINE COMPLETED SUCCESSFULLY'
+      "
+
+networks:
+  imdb-net:
+    driver: bridge
