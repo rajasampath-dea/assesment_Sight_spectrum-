@@ -1,101 +1,13 @@
 # assesment_Sight_spectrum-
 new assessement from sight spectrum of DEA challenge
 
-My prompt 
-
-You are a senior Data Engineer and Cloud Architect.
-
-Design a production-style Docker Compose orchestration for an AWS EC2 environment that runs a complete data pipeline.
-
-## Context
-We are building a lakehouse pipeline for IMDb data.
-
-The pipeline has 3 sequential steps:
-
-1. Download stage:
-   - Run `download_kaggle_file.py`
-   - Downloads IMDb dataset from Kaggle and extracts it to a local `/tmp` or `/data` directory.
-
-2. ETL stage (Spark):
-   - Run `pyspark_etl_job.py`
-   - Uses Apache Spark (inside Docker Compose cluster with master + worker)
-   - Cleans and transforms IMDb dataset (titles, ratings, principals)
-   - Writes output as partitioned Parquet files to Amazon S3 (NOT local storage)
-
-3. OLAP load stage:
-   - Run `load_to_olap.py`
-   - Uses Python + psycopg2
-   - Executes Redshift COPY commands to load data from S3 into Redshift tables
-
----
-
-## Requirements
-
-### 1. Docker Compose
-Create a complete `docker-compose.yml` that:
-- Runs on AWS EC2 Linux instance
-- Includes:
-  - Spark master container
-  - Spark worker container
-  - A pipeline orchestrator container that runs scripts in correct order
-- Ensures correct execution order:
-  1. download_kaggle_file.py
-  2. pyspark_etl_job.py
-  3. load_to_olap.py
-- Uses environment variables for all credentials (NO hardcoded secrets)
-- Supports AWS S3 access via IAM role OR environment variables
-- Is production-style (not toy example)
-
----
-
-### 2. Environment Configuration
-Include proper environment variable design:
-- AWS credentials (if needed)
-- Redshift connection parameters:
-  - host
-  - database
-  - user
-  - password
-  - port
-- IAM role ARN for Redshift COPY
-- Spark/S3 configuration
-
-Prefer `.env` usage and docker-compose variable substitution.
-
----
-
-### 3. Execution Design
-Ensure:
-- Scripts execute in strict sequence
-- Failure in one step stops pipeline
-- Logs are visible in Docker output
-- Pipeline is idempotent-safe where possible
-
----
-
-### 4. Constraints
-- Do NOT include Redshift as a Docker container (it is AWS managed)
-- Assume S3 is external AWS storage
-- Spark runs inside Docker Compose only
-- Designed for EC2 deployment
-- Must be clean, readable, and interview-ready
-
----
-
-## Output format required
-
-1. docker-compose.yml (fully working)
-2. .env example file (all required variables)
-3. brief explanation of orchestration design (2–4 paragraphs max)
-
----
-
-## Goal
-
-The final solution should reflect a real-world production data engineering pipeline using:
-- Spark (ETL layer)
-- S3 (data lake)
-- Redshift (OLAP warehouse)
-- Docker Compose (orchestration on EC2)
-
-Make it senior-level quality, not beginner.
+##I chose Amazon Redshift as the OLAP engine because it is optimized for large-scale analytical workloads.
+##It uses columnar storage, which significantly improves query performance for aggregations.
+##Its massively parallel processing (MPP) architecture enables fast execution across large datasets.
+##Redshift integrates natively with Amazon S3, making it ideal for a lakehouse pipeline.
+##The COPY command allows efficient bulk loading of Parquet data from S3.
+##It is a fully managed service, reducing operational overhead and maintenance effort.
+##Built-in features like compression and query optimization enhance performance automatically.
+##It supports standard SQL, making it easy for analysts to query data.
+##Redshift also integrates well with BI tools for reporting and dashboards.
+##Overall, it provides a scalable, high-performance, and AWS-native OLAP solution.
